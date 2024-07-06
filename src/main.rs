@@ -3,7 +3,7 @@ use std::{
     fs::{copy, read_dir},
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Ok, Result};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -31,7 +31,7 @@ fn main() -> Result<()> {
     }
 }
 
-fn use_config(path: String, config_name: String) -> Result<()> {
+fn use_config(path: String, matcher: String) -> Result<()> {
     copy(
         format!("{}{}", path, "config"),
         format!("{}{}", path, "config.backup"),
@@ -39,43 +39,50 @@ fn use_config(path: String, config_name: String) -> Result<()> {
     .context("Failed to create backup of current config")?;
 
     let entries = read_dir(&path).context("Failed to read SSH directory")?;
-    let mut found = false;
-    for entry in entries {
-        if let Ok(e) = entry {
-            let name = e.file_name();
-            let name = name.to_str().context("Invalid filename encoding")?;
-            if name == format!("config.{}", config_name) {
-                found = true;
-                copy(
-                    format!("{}config.{}", path, config_name),
-                    format!("{}config", path),
-                )
-                .context(format!("Failed to set config to {}", config_name))?;
 
-                std::process::Command::new("pkill")
-                    .arg("ssh-agent")
-                    .output()
-                    .context("Failed to kill ssh-agent")?;
+    let filtered: Vec<String> = entries
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.file_name().into_string().ok())
+        .filter_map(|name| name)
+        .filter(|name| name.starts_with("config.") && name["config.".len()..].contains(&matcher))
+        .collect();
 
-                std::process::Command::new("ssh-agent")
-                    .arg("-s")
-                    .output()
-                    .context("Failed to start ssh-agent")?;
+    match filtered.len() {
+        0 => bail!("No matches found given the pattern: `{}`", matcher),
+        n if n > 1 => bail!(
+            "Multiple matches found given the pattern `{}`:\n{}",
+            matcher,
+            filtered.join(", ")
+        ),
+        _ => {
+            let config_name = &filtered[0];
 
-                eprintln!("Now using config.{}", config_name);
-            }
+            copy(
+                format!("{}{}", path, config_name),
+                format!("{}config", path),
+            )
+            .context(format!("Failed to set config to {}", config_name))?;
+
+            std::process::Command::new("pkill")
+                .arg("ssh-agent")
+                .output()
+                .context("Failed to kill ssh-agent")?;
+
+            std::process::Command::new("ssh-agent")
+                .arg("-s")
+                .output()
+                .context("Failed to start ssh-agent")?;
+
+            eprintln!("Now using config.{}", config_name);
+            Ok(())
         }
     }
-    if !found {
-        bail!("Could not find config named: {} ", config_name)
-    }
-    Ok(())
 }
 
 fn list_available_config_files(path: String) -> Result<()> {
     let entries = read_dir(path).unwrap();
     for entry in entries {
-        if let Ok(e) = entry {
+        if let Result::Ok(e) = entry {
             let name = e.file_name();
             let name = name.to_str().unwrap();
             if name.starts_with("config.") && !name.ends_with("backup") {
