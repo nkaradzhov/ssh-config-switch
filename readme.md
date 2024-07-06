@@ -1,11 +1,26 @@
 # SSH Config Switch
 
-A tool to manage and switch between different SSH configuration files easily.
+A tool to manage and switch between different SSH configuration files easily
 
 ## Features
 
--   **List**: Display available SSH configuration profiles.
--   **Use**: Activate a selected SSH configuration profile and backup the current one.
+-   **List**: Display available SSH configuration profiles
+-   **Use**: Activate a selected SSH configuration profile and backup the current one
+
+## Assumptions
+
+1. Location of SSH Profiles:
+
+    - All available SSH configuration profiles should be located in the user's `~/.ssh/` directory
+
+2. Naming Convention:
+
+    - SSH configuration profiles must follow a specific naming pattern: config.\<name>
+    - For example, if you have profiles for `work` and `personal` use, they should be named `config.work` and `config.personal`, respectively.
+
+3. Backup:
+
+    - Before switching profiles, the program creates a backup of the current config file, named `config.backup`. This ensures you can restore the previous configuration if needed
 
 ## Installation
 
