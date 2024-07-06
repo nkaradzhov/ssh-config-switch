@@ -5,7 +5,7 @@ A tool to manage and switch between different SSH configuration files easily.
 ## Features
 
 -   **List**: Display available SSH configuration profiles.
--   **Set**: Activate a selected SSH configuration profile and backup the current one.
+-   **Use**: Activate a selected SSH configuration profile and backup the current one.
 
 ## Installation
 
@@ -37,7 +37,7 @@ List all available SSH configuration profiles in the `~/.ssh/` directory.
 ssh-config-switch list
 ```
 
-### Set a Profile
+### Use a Profile
 
 Set a specified SSH configuration profile as the active one. The tool backs up the current `config` file to `config.backup`.
 
@@ -62,7 +62,3 @@ Contributions are welcome! Please submit issues or pull requests for improvement
 ## License
 
 This project is licensed under the MIT License.
-
----
-
-Feel free to adjust the repository URL, instructions, or any other details to better suit your specific project setup.
