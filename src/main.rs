@@ -1,6 +1,6 @@
 use std::{
     env,
-    fs::{copy, read_dir},
+    fs::{copy, read, read_dir},
 };
 
 use anyhow::{bail, Context, Ok, Result};
@@ -80,13 +80,23 @@ fn use_config(path: String, matcher: String) -> Result<()> {
 }
 
 fn list_available_config_files(path: String) -> Result<()> {
+    let current_config_contents =
+        read(format!("{}config", path)).context("Could not read current config")?;
+
     let entries = read_dir(path).unwrap();
     for entry in entries {
         if let Result::Ok(e) = entry {
             let name = e.file_name();
             let name = name.to_str().unwrap();
             if name.starts_with("config.") && !name.ends_with("backup") {
-                println!("{} ", name.split(".").last().unwrap());
+                let entry_contents =
+                    read(e.path()).context(format!("Could not read {:?}", e.file_name()))?;
+                let is_current = if current_config_contents == entry_contents {
+                    "*"
+                } else {
+                    ""
+                };
+                println!("{} {}", name.split(".").last().unwrap(), is_current);
             }
         }
     }
